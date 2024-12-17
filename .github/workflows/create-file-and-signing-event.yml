@@ -1,10 +1,9 @@
 name: 'Create file and signing event'
 
-# It only executes if there are changes in the /source-code repository
 on:
   push:
     paths: 
-      - 'source-code/**/*.go'  # Eliminar el punto extra, es incorrecto
+      - 'source-code/**/*.go'  # Trigger when Go files in source-code change.
 
 jobs:
   build-go:
@@ -26,15 +25,15 @@ jobs:
       - name: Get Changed Go Files
         id: changed-files
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'source-code/.*\.go$' || echo "")
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep 'source-code/.*\.go$' || echo "")
           echo "Changed Go files: $CHANGED_FILES"
           echo "FILES=$CHANGED_FILES" >> $GITHUB_ENV
-      
+
       # 4. Compile the modified changes
       - name: Build Modified Go Files
         if: env.FILES != ''
         run: |
-          mkdir -p build  # Asegura que el directorio 'build' exista
+          mkdir -p build
           for file in $FILES; do
             echo "Building $file..."
             output_name=$(basename $file .go)
