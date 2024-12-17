@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-go:
-    name: 'Build changed .go files'
+    name: 'Build all .go files in source-code'
     runs-on: ubuntu-latest
 
     steps:
@@ -21,20 +21,18 @@ jobs:
         with:
           go-version: '1.21'
 
-      # 3. Obtain the modified files
-      - name: Get Changed Go Files
-        id: changed-files
+      # 3. List all files in source-code directory
+      - name: List All Go Files in source-code
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep 'source-code/.*\.go$' || echo "")
-          echo "Changed Go files: $CHANGED_FILES"
-          echo "FILES=$CHANGED_FILES" >> $GITHUB_ENV
+          echo "Listing all Go files in source-code directory:"
+          find source-code -type f -name "*.go"
 
-      # 4. Compile the modified changes
-      - name: Build Modified Go Files
-        if: env.FILES != ''
+      # 4. Compile all Go files
+      - name: Build All Go Files
         run: |
           mkdir -p build
-          for file in $FILES; do
+          echo "Building all Go files in source-code..."
+          find source-code -type f -name "*.go" | while read file; do
             echo "Building $file..."
             output_name=$(basename $file .go)
             go build -o build/$output_name $file
