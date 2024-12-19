@@ -3,5 +3,5 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("Nebula V1.0.5\n")
+	fmt.Printf("Nebula V1.0.6\n")
 }

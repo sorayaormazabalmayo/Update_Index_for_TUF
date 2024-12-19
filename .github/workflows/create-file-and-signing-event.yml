@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: index
-          path: index/index.txt
+          path: index.json
           retention-days: 10
                 
 
