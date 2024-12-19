@@ -61,9 +61,21 @@ jobs:
         run: |
           echo "Uploading all binaries in build/ to Google Artifact Registry..."
           for file in build/*; do
-            echo "Uploading $file..."
-             # Extract version from the filename (assumes structure like 'something_v1.2.3')
+            echo "Processing $file..."
+            
+            # Extract filename
+            filename=$(basename "$file")
+            
+            # Extract version from the filename (assumes structure like 'something_v1.2.3')
             version=$(echo "$filename" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+            
+            # Ensure version is extracted properly
+            if [ -z "$version" ]; then
+              echo "Error: Could not extract version from filename $filename. Skipping upload."
+              continue
+            fi
+
+            echo "Uploading $file with version $version..."
             gcloud artifacts generic upload \
               --repository=nebula-storage \
               --location=europe-southwest1 \
@@ -72,6 +84,7 @@ jobs:
               --version="$version" \
               --source="$file"
           done
+
 
       # Step 8: Generate or Update index.json
       - name: Update index.json with new versions
