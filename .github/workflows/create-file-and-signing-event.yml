@@ -71,30 +71,33 @@ jobs:
               --source="$file"
           done
 
-      # Step 8: Generating index.txt with the files that are inside build
+      # Step 8: Generating index.json file for future indexing
       - name: Generating index.json file for future indexing
         run: |
           echo "Generating the index.json"
           echo '{
-            "nebula_v1.0.0":{
+            "nebula_v1.0.0": {
               "length": 123,
-              "hashes":{
+              "hashes": {
                 "sha256": "abcde..."
-                }
-              "version":1.0.0
-              }
-          }'>index.json
+              },
+              "version": "1.0.0"
+            }
+          }' > index.json
           echo "Constructed JSON file contents:"
           cat index.json
-    
-      - name: Creating the file
-        uses: actions/upload-artifact@v4
-        with:
-          name: index
-          path: index.json
-          retention-days: 10
-                
 
+      # Step 9: Commit and Push index.json to the Repository
+      - name: Commit and Push index.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Adding and committing index.json to the repository..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git commit -m "Add generated index.json"
+          git push origin ${{ github.ref }}
 
-        
           
+            
