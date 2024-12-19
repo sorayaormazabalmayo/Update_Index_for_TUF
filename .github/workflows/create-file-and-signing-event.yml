@@ -70,3 +70,22 @@ jobs:
               --version=v1.0.2 \
               --source="$file"
           done
+
+      # Step 8: Generating index.txt with the files that are inside build
+      - name: Generating index.json file for future indexing
+        run: |
+          echo "Generating the index.json"
+          echo '{
+            "nebula_v1.0.0":{
+              "length": 123,
+              "hashes":{
+                "sha256": "abcde..."
+                }
+              "version":1.0.0
+              }
+          }'>index.json
+          echo "Constructed JSON file contents:"
+          cat index.json
+
+        
+          
