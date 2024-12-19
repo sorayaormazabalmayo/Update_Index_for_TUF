@@ -103,3 +103,21 @@ jobs:
 
           echo "Updated index.json:"
           cat index.json
+
+  # Step 9: Commit and Push index.json to the Repository
+      - name: Commit and Push index.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for changes..."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected, committing index.json..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add index.json
+            git commit -m "Update index.json with new versions"
+            git push origin ${{ github.ref }}
+          else
+            echo "No changes to commit."
+          fi
+
