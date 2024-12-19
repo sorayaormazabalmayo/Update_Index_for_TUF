@@ -71,21 +71,16 @@ jobs:
               --source="$file"
           done
 
-           # Step 8: Pull the latest changes and overwrite index.json
-      - name: Pull the latest index.json
+      # Step 8: Generate or Overwrite index.json
+      - name: Generate or Overwrite index.json
         run: |
-          echo "Pulling the latest index.json from the repository..."
-          git fetch origin ${{ github.ref }}
-          git checkout ${{ github.ref }}
+          echo "Checking if index.json exists in the repository..."
           if [ -f index.json ]; then
-            echo "Found existing index.json, it will be overwritten."
+            echo "index.json exists, overwriting it."
           else
-            echo "No existing index.json found, a new one will be created."
+            echo "index.json does not exist, creating a new one."
           fi
 
-      - name: Extracting parameters and overwriting index.json
-        run: |
-          echo "Initializing index.json..."
           echo '{}' > index.json
           for file in build/*; do
             echo "Processing $file..."
@@ -113,6 +108,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Pulling latest changes..."
+          git pull origin ${{ github.ref }}
+          
           echo "Checking for changes..."
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes detected, committing index.json..."
@@ -124,4 +122,4 @@ jobs:
           else
             echo "No changes to commit."
           fi
-
+s
