@@ -86,6 +86,15 @@ jobs:
           }'>index.json
           echo "Constructed JSON file contents:"
           cat index.json
+    
+      - name: Creating the file
+        uses: actions/upload-artifact@v4
+        with:
+          name: index
+          path: index/index.txt
+          retention-days: 10
+                
+
 
         
           
