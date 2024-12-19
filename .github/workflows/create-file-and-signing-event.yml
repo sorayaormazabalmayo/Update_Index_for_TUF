@@ -71,8 +71,19 @@ jobs:
               --source="$file"
           done
 
-      # Step 8: Extract parameters of the file and update index.json
-      - name: Extracting parameters and updating index.json
+           # Step 8: Pull the latest changes and overwrite index.json
+      - name: Pull the latest index.json
+        run: |
+          echo "Pulling the latest index.json from the repository..."
+          git fetch origin ${{ github.ref }}
+          git checkout ${{ github.ref }}
+          if [ -f index.json ]; then
+            echo "Found existing index.json, it will be overwritten."
+          else
+            echo "No existing index.json found, a new one will be created."
+          fi
+
+      - name: Extracting parameters and overwriting index.json
         run: |
           echo "Initializing index.json..."
           echo '{}' > index.json
@@ -108,8 +119,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add index.json
-            git commit -m "Add or update generated index.json"
+            git commit -m "Overwrite and update index.json"
             git push origin ${{ github.ref }}
           else
             echo "No changes to commit."
           fi
+
