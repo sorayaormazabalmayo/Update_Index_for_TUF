@@ -71,20 +71,23 @@ jobs:
               --source="$file"
           done
 
-      # Step 8: Generating index.json file for future indexing
-      - name: Generating index.json file for future indexing
+      # Step 8: Extract parameters of the file and update index.json
+      - name: Extracting parameters and updating index.json
         run: |
-          echo "Generating the index.json"
-          echo '{
-            "nebula_v1.0.0": {
-              "length": 123,
-              "hashes": {
-                "sha256": "abcde..."
-              },
-              "version": "1.0.0"
-            }
-          }' > index.json
-          echo "Constructed JSON file contents:"
+          echo "Initializing index.json..."
+          echo '{}' > index.json
+          for file in build/*; do
+            echo "Processing $file..."
+            length=$(stat -c%s "$file")
+            sha256=$(sha256sum "$file" | awk '{print $1}')
+            filename=$(basename "$file")
+            echo "File: $filename, Length: $length, SHA256: $sha256"
+            jq --arg file "$filename" \
+               --arg length "$length" \
+               --arg sha256 "$sha256" \
+               '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: "1.0.0"}' index.json > tmp.json && mv tmp.json index.json
+          done
+          echo "Updated index.json:"
           cat index.json
 
       # Step 9: Commit and Push index.json to the Repository
@@ -92,12 +95,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Adding and committing index.json to the repository..."
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.json
-          git commit -m "Add generated index.json"
-          git push origin ${{ github.ref }}
-
-          
-            
+          echo "Checking for changes..."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected, committing index.json..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add index.json
+            git commit -m "Add or update generated index.json"
+            git push origin ${{ github.ref }}
+          else
+            echo "No changes to commit."
+          fi
