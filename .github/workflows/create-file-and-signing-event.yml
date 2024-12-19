@@ -71,17 +71,17 @@ jobs:
               --source="$file"
           done
 
-      # Step 8: Generate or Overwrite index.json
-      - name: Generate or Overwrite index.json
+      # Step 8: Generate or Update index.json
+      - name: Update index.json with new versions
         run: |
-          echo "Checking if index.json exists in the repository..."
+          echo "Checking for existing index.json..."
           if [ -f index.json ]; then
-            echo "index.json exists, overwriting it."
+            echo "index.json exists, loading it."
           else
             echo "index.json does not exist, creating a new one."
+            echo '{}' > index.json
           fi
 
-          echo '{}' > index.json
           for file in build/*; do
             echo "Processing $file..."
             length=$(stat -c%s "$file")
@@ -93,32 +93,13 @@ jobs:
             
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
             
-            # Add file details to index.json using jq
+            # Add or update the entry in index.json
             jq --arg file "$filename" \
-               --arg length "$length" \
-               --arg sha256 "$sha256" \
-               --arg version "$version" \
-               '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' index.json > tmp.json && mv tmp.json index.json
+              --arg length "$length" \
+              --arg sha256 "$sha256" \
+              --arg version "$version" \
+              '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' index.json > tmp.json && mv tmp.json index.json
           done
+
           echo "Updated index.json:"
           cat index.json
-
-      # Step 9: Commit and Push index.json to the Repository
-      - name: Commit and Push index.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Pulling latest changes..."
-          git pull origin ${{ github.ref }}
-          
-          echo "Checking for changes..."
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Changes detected, committing index.json..."
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add index.json
-            git commit -m "Overwrite and update index.json"
-            git push origin ${{ github.ref }}
-          else
-            echo "No changes to commit."
-          fi
