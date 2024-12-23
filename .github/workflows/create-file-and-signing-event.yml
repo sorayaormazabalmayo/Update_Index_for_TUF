@@ -1,4 +1,4 @@
-name: 'Create file and signing event'
+name: 'Upload .go Files to Google Artifact Registry'
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - 'source-code/**/*.go'  # Trigger when Go files in source-code change.
 
 jobs:
-  build-and-upload:
-    name: 'Build and upload Go binaries'
+  upload-go-files:
+    name: 'Upload .go Files to Google Artifact Registry'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,36 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Install Go
-      - name: Setting up Golang
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
-      # Step 3: List all Go files in source-code directory
-      - name: List All Go Files in source-code
-        run: |
-          echo "Listing all Go files in source-code directory:"
-          find source-code -type f -name "*.go"
-
-      # Step 4: Build all Go files
-      - name: Build All Go Files
-        run: |
-          mkdir -p build
-          echo "Building all Go files in source-code..."
-          find source-code -type f -name "*.go" | while read file; do
-            echo "Building $file..."
-            output_name=$(basename $file .go)
-            go build -o build/$output_name $file
-          done
-
-      # Step 5: Show Build Results
-      - name: List Build Output
-        run: |
-          echo "Build outputs:"
-          ls -lh build/
-
-      # Step 6: Authenticate with Google Cloud
+      # Step 2: Authenticate with Google Cloud
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -56,17 +27,17 @@ jobs:
           service_account: github-actions-auth@polished-medium-445107-i9.iam.gserviceaccount.com
           access_token_lifetime: '600s'
 
-      # Step 7: Upload binaries to Google Artifact Registry
-      - name: Pushing all binaries to Google Artifact Registry
+      # Step 3: Upload all .go files to Google Artifact Registry
+      - name: Upload .go Files to Google Artifact Registry
         run: |
-          echo "Uploading all binaries in build/ to Google Artifact Registry..."
-          for file in build/*; do
+          echo "Uploading all .go files in source-code/ to Google Artifact Registry..."
+          find source-code -type f -name "*.go" | while read file; do
             echo "Processing $file..."
-            
+
             # Extract filename
             filename=$(basename "$file")
             
-            # Extract version from the filename (assumes structure like 'something_v1.2.3')
+            # Extract version from the filename (assumes structure like 'something_v1.2.3.go')
             version=$(echo "$filename" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
             
             # Ensure version is extracted properly
@@ -81,12 +52,11 @@ jobs:
               --location=europe-southwest1 \
               --project=polished-medium-445107-i9 \
               --package=nebula-package \
-              --version="$filename" \
+              --version="$version" \
               --source="$file"
           done
 
-
-      # Step 8: Generate or Update index.json
+      # Step 4: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
           echo "Checking for existing index.json..."
@@ -97,13 +67,13 @@ jobs:
             echo '{}' > index.json
           fi
 
-          for file in build/*; do
+          find source-code -type f -name "*.go" | while read file; do
             echo "Processing $file..."
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
             filename=$(basename "$file")
             
-            # Extract version from the filename (assumes structure like 'something_v1.2.3')
+            # Extract version from the filename (assumes structure like 'something_v1.2.3.go')
             version=$(echo "$filename" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
             
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
@@ -119,7 +89,7 @@ jobs:
           echo "Updated index.json:"
           cat index.json
 
-  # Step 9: Commit and Push index.json to the Repository
+      # Step 5: Commit and Push index.json to the Repository
       - name: Commit and Push index.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -135,4 +105,3 @@ jobs:
           else
             echo "No changes to commit."
           fi
-
