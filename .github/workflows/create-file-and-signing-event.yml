@@ -3,7 +3,7 @@ name: 'Create file and signing event'
 on:
   push:
     paths: 
-      - '*.go'  # Trigger when Go files in source-code change.
+      - '*.go'  # Trigger when Go files in the source-code directory change.
 
 jobs:
   build-and-upload:
@@ -16,7 +16,7 @@ jobs:
       TZ: Europe/Madrid  # Set the timezone to your local timezone
 
     steps:
-      # Step 1: Clone the repository
+      # Step 1: Clone the source repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
@@ -63,15 +63,12 @@ jobs:
         id: pushing-GAR
         run: |
           echo "Uploading all binaries in build/ to Google Artifact Registry..."
-          # Generate version with date, hour, minute, and second
-            version=$(date +'%Y.%m.%d-%H.%M.%S')
-          # Pass the variable to workflow outputs
-            echo "::set-output name=version::$version"
+          version=$(date +'%Y.%m.%d-%H.%M.%S')
+          echo "::set-output name=version::$version"
 
           for file in build/*; do
             echo "Processing $file..."
             
-            # Extract filename
             filename=$(basename "$file")
 
             echo "Uploading $file with version $version..."
@@ -84,19 +81,20 @@ jobs:
               --source="$file"
           done
 
-      # Step 8: Clone the target repository for index.json
-      - name: Clone Target Repository for Index
+      # Step 8: Clone the target repository
+      - name: Clone Target Repository
         run: |
           echo "Cloning target repository for index.json..."
           git clone https://github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git tuf-repo
           cd tuf-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p updates-not-released-index
 
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
-          cd tuf-repo
+          cd tuf-repo/updates-not-released-index
           echo "Checking for existing index.json..."
           if [ -f index.json ]; then
             echo "index.json exists, loading it."
@@ -105,18 +103,16 @@ jobs:
             echo '{}' > index.json
           fi
 
-          for file in ../build/*; do
+          for file in ../../build/*; do
             echo "Processing $file..."
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
             filename=$(basename "$file")
             
-            # Generate version with date, hour, minute, and second
             version=${{steps.pushing-GAR.outputs.version}}
             
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
             
-            # Add or update the entry in index.json
             jq --arg file "$filename" \
               --arg length "$length" \
               --arg sha256 "$sha256" \
@@ -127,7 +123,7 @@ jobs:
           echo "Updated index.json:"
           cat index.json
 
-      # Step 10: Commit and Push index.json to Target Repository
+      # Step 10: Commit and Push index.json to the Target Repository
       - name: Commit and Push index.json
         env:
           GITHUB_TOKEN: ${{ secrets.TUF_REPO_PAT }}
@@ -138,9 +134,9 @@ jobs:
             echo "Changes detected, committing index.json..."
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add index.json
+            git add updates-not-released-index/index.json
             git commit -m "Update index.json with new versions"
-            git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault/updates-not-realeased-index.git main
+            git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git main
           else
             echo "No changes to commit."
           fi
