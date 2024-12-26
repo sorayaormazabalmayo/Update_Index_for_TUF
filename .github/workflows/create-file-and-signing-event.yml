@@ -3,7 +3,7 @@ name: 'Create file and signing event'
 on:
   push:
     paths: 
-      - 'source-code/**/*.go'  # Trigger when Go files in source-code change.
+      - '*.go'  # Trigger when Go files in source-code change.
 
 jobs:
   build-and-upload:
@@ -24,18 +24,18 @@ jobs:
         with:
           go-version: '1.21'
 
-      # Step 3: List all Go files in source-code directory
-      - name: List All Go Files in source-code
+      # Step 3: List all Go files in the directory
+      - name: List All Go Files in the directory
         run: |
-          echo "Listing all Go files in source-code directory:"
-          find source-code -type f -name "*.go"
+          echo "Listing all Go files in the directory:"
+          find -name "*.go"
 
       # Step 4: Build all Go files
       - name: Build All Go Files
         run: |
           mkdir -p build
-          echo "Building all Go files in source-code..."
-          find source-code -type f -name "*.go" | while read file; do
+          echo "Building all Go files in the directory"
+          find -name "*.go" | while read file; do
             echo "Building $file..."
             output_name=$(basename $file .go)
             go build -o build/$output_name $file
@@ -66,14 +66,8 @@ jobs:
             # Extract filename
             filename=$(basename "$file")
             
-            # Extract version from the filename (assumes structure like 'something_v1.2.3')
-            version=$(echo "$filename" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
-            
-            # Ensure version is extracted properly
-            if [ -z "$version" ]; then
-              echo "Error: Could not extract version from filename $filename. Skipping upload."
-              continue
-            fi
+            # Generate version with date, hour, minute, and second
+            version=$(date +'%Y.%m.%d-%H.%M.%S')
 
             echo "Uploading $file with version $version..."
             gcloud artifacts generic upload \
@@ -81,14 +75,23 @@ jobs:
               --location=europe-southwest1 \
               --project=polished-medium-445107-i9 \
               --package=nebula-package \
-              --version="$filename" \
+              --version="$version" \
               --source="$file"
           done
 
+      # Step 8: Clone the target repository for index.json
+      - name: Clone Target Repository for Index
+        run: |
+          echo "Cloning target repository for index.json..."
+          git clone https://github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git tuf-repo
+          cd tuf-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Step 8: Generate or Update index.json
+      # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
+          cd tuf-repo
           echo "Checking for existing index.json..."
           if [ -f index.json ]; then
             echo "index.json exists, loading it."
@@ -97,14 +100,14 @@ jobs:
             echo '{}' > index.json
           fi
 
-          for file in build/*; do
+          for file in ../build/*; do
             echo "Processing $file..."
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
             filename=$(basename "$file")
             
-            # Extract version from the filename (assumes structure like 'something_v1.2.3')
-            version=$(echo "$filename" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+            # Generate version with date, hour, minute, and second
+            version=$(date +'%Y.%m.%d-%H.%M.%S')
             
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
             
@@ -119,11 +122,12 @@ jobs:
           echo "Updated index.json:"
           cat index.json
 
-  # Step 9: Commit and Push index.json to the Repository
+      # Step 10: Commit and Push index.json to Target Repository
       - name: Commit and Push index.json
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TUF_REPO_PAT }}
         run: |
+          cd tuf-repo
           echo "Checking for changes..."
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes detected, committing index.json..."
@@ -131,8 +135,7 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add index.json
             git commit -m "Update index.json with new versions"
-            git push origin ${{ github.ref }}
+            git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git main
           else
             echo "No changes to commit."
           fi
-
