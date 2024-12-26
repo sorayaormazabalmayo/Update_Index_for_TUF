@@ -12,6 +12,8 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      TZ: Europe/Madrid  # Set the timezone to your local timezone
 
     steps:
       # Step 1: Clone the repository
@@ -58,16 +60,19 @@ jobs:
 
       # Step 7: Upload binaries to Google Artifact Registry
       - name: Pushing all binaries to Google Artifact Registry
+        id: pushing-GAR
         run: |
           echo "Uploading all binaries in build/ to Google Artifact Registry..."
+          # Generate version with date, hour, minute, and second
+            version=$(date +'%Y.%m.%d-%H.%M.%S')
+          # Pass the variable to workflow outputs
+            echo "::set-output name=version::$version"
+
           for file in build/*; do
             echo "Processing $file..."
             
             # Extract filename
             filename=$(basename "$file")
-            
-            # Generate version with date, hour, minute, and second
-            version=$(date +'%Y.%m.%d-%H.%M.%S')
 
             echo "Uploading $file with version $version..."
             gcloud artifacts generic upload \
@@ -107,7 +112,7 @@ jobs:
             filename=$(basename "$file")
             
             # Generate version with date, hour, minute, and second
-            version=$(date +'%Y.%m.%d-%H.%M.%S')
+            version=${{steps.pushing-GAR.outputs.version}}
             
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
             
