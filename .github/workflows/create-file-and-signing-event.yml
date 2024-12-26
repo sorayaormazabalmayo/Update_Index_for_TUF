@@ -140,7 +140,7 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add index.json
             git commit -m "Update index.json with new versions"
-            git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git main
+            git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault/updated-not-realeased-index.git main
           else
             echo "No changes to commit."
           fi
