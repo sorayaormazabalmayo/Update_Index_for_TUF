@@ -2,11 +2,6 @@ name: 'Push Target File to TUF Repository'
 
 on:
   workflow_dispatch:  # Manually triggered for flexibility
-    inputs:
-      target_file:
-        description: 'Path to the target file to be pushed'
-        required: true
-        default: 'index.json'
 
 jobs:
   push-target-file:
@@ -14,28 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the current repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      # Step 2: Compute SHA256 hash of the file and construct the branch name
-      - name: Compute SHA256 and Branch Name
-        id: compute-branch
-        run: |
-          # Compute the SHA256 hash of the target file
-          sha256=$(sha256sum ${{ github.event.inputs.target_file }} | awk '{print $1}')
-          echo "SHA256 hash of ${{ github.event.inputs.target_file }}: $sha256"
-          
-          # Construct the branch name
-          branch_name="sign/$sha256"
-          echo "Branch name: $branch_name"
-          
-          # Export the branch name for later steps
-          echo "::set-output name=branch::$branch_name"
-        shell: bash
-
-      # Step 3: Clone the Remote TUF Repository
-      - name: Clone TUF Repository
+      # Step 1: Clone the Target Repository
+      - name: Clone Target Repository
         env:
           TUF_REPO_URL: ${{ secrets.TUF_REPO_URL }}
         run: |
@@ -45,25 +20,53 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Step 4: Create and Checkout the Computed Branch
+      # Step 2: Compute SHA256 hash of the file in the cloned repository
+      - name: Compute SHA256 and Branch Name
+        id: compute-branch
+        run: |
+          cd tuf-repo
+          # Ensure the file exists
+          if [ ! -f updates-not-released-index/index.json ]; then
+            echo "Error: index.json not found in updates-not-released-index folder."
+            exit 1
+          fi
+
+          # Compute the SHA256 hash of the file
+          sha256=$(sha256sum updates-not-released-index/index.json | awk '{print $1}')
+          echo "SHA256 hash of index.json: $sha256"
+
+          # Construct the branch name
+          branch_name="sign/$sha256"
+          echo "Branch name: $branch_name"
+
+          # Export the branch name for later steps
+          echo "::set-output name=branch::$branch_name"
+        shell: bash
+
+      # Step 3: Create and Checkout the Computed Branch
       - name: Create and Checkout New Branch
         run: |
           cd tuf-repo
-          git checkout -b ${{ steps.compute-branch.outputs.branch }}
-          echo "Created and switched to branch ${{ steps.compute-branch.outputs.branch }}."
+          branch_name=${{ steps.compute-branch.outputs.branch }}
+          git checkout -b $branch_name
+          echo "Created and switched to branch $branch_name."
 
-      # Step 5: Replace Contents of the updates-not-released-index Folder
+      # Step 4: Replace Contents of the Updates-Not-Released-Index Folder
       - name: Replace Updates-Not-Released-Index Folder Contents
         run: |
           cd tuf-repo
           echo "Deleting all contents of the updates-not-released-index folder..."
           rm -rf updates-not-released-index/*
           mkdir -p updates-not-released-index
-          cp ../${{ github.event.inputs.target_file }} updates-not-released-index/index.json
-          echo "Copied ${{ github.event.inputs.target_file }} to updates-not-released-index/ as index.json."
 
-      # Step 6: Commit and Push Changes to the TUF Repository
+          # Add new content to the folder (modify as needed)
+          echo '{}' > updates-not-released-index/index.json
+          echo "Updated the updates-not-released-index folder with new content."
+
+      # Step 5: Commit and Push Changes to the TUF Repository
       - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.TUF_REPO_PAT }}
         run: |
           cd tuf-repo
           git add updates-not-released-index/
