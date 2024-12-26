@@ -52,20 +52,20 @@ jobs:
           git checkout -b ${{ steps.compute-branch.outputs.branch }}
           echo "Created and switched to branch ${{ steps.compute-branch.outputs.branch }}."
 
-      # Step 5: Replace Contents of the Targets Folder
-      - name: Replace Targets Folder Contents
+      # Step 5: Replace Contents of the updates-not-released-index Folder
+      - name: Replace Updates-Not-Released-Index Folder Contents
         run: |
           cd tuf-repo
-          echo "Deleting all contents of the targets folder..."
-          rm -rf targets/*
-          mkdir -p targets
-          cp ../${{ github.event.inputs.target_file }} targets/index.json
-          echo "Copied ${{ github.event.inputs.target_file }} to targets/ as index.json."
+          echo "Deleting all contents of the updates-not-released-index folder..."
+          rm -rf updates-not-released-index/*
+          mkdir -p updates-not-released-index
+          cp ../${{ github.event.inputs.target_file }} updates-not-released-index/index.json
+          echo "Copied ${{ github.event.inputs.target_file }} to updates-not-released-index/ as index.json."
 
       # Step 6: Commit and Push Changes to the TUF Repository
       - name: Commit and Push Changes
         run: |
           cd tuf-repo
-          git add targets/
-          git commit -m "Replace contents of targets/ with index.json"
+          git add updates-not-released-index/
+          git commit -m "Replace contents of updates-not-released-index/ with index.json"
           git push origin ${{ steps.compute-branch.outputs.branch }}
