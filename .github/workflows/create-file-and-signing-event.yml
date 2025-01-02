@@ -94,6 +94,8 @@ jobs:
       - name: Update index.json with new versions
         run: |
           for file in ../../build/*; do
+
+            echo "$file"
             # Correct the syntax for index-name assignment
             index_name="${file}-index.json"
 
