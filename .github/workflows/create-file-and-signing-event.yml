@@ -95,7 +95,7 @@ jobs:
         run: |
           for file in ../../build/*; do
 
-            echo "$file"
+            echo "The filename could be $file"
             # Correct the syntax for index-name assignment
             index_name="${file}-index.json"
 
