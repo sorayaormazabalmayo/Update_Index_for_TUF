@@ -34,6 +34,7 @@ jobs:
 
         # Step 4: Build all Go files
       - name: Build All Go Files
+        id: build_step
         run: |
           echo "Building all Go files in the directory..."
           mkdir -p build
@@ -67,16 +68,14 @@ jobs:
           echo "::set-output name=version::$version"
 
           for file in build/*; do
-            echo "Processing $file... inside package $output_name"
-            
             filename=$(basename "$file")
-
+            echo "Processing $file... inside package $filename"
             echo "Uploading $file with version $version..."
             gcloud artifacts generic upload \
               --repository=nebula-storage \
               --location=europe-southwest1 \
               --project=polished-medium-445107-i9 \
-              --package=$output_name \
+              --package=$filename \
               --version="$version" \
               --source="$file"
           done
