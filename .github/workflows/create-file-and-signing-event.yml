@@ -95,9 +95,10 @@ jobs:
         run: |
           for file in build/*; do
 
+            filename=$(basename "$file")
             echo "The filename could be $file"
             # Correct the syntax for index-name assignment
-            index_name="${file}-index.json"
+            index_name="${filename}-index.json"
 
             # Change to the appropriate directory
             cd "tuf-repo/updates-not-released-index" || exit
@@ -115,7 +116,6 @@ jobs:
             # Collect file details
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
-            filename=$(basename "$file")
 
             # Access the version output from the previous step
             version="${{ steps.pushing-GAR.outputs.version }}"
