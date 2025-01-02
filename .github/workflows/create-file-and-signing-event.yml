@@ -93,7 +93,7 @@ jobs:
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
-          for file in ../../build/*; do
+          for file in build/*; do
 
             echo "The filename could be $file"
             # Correct the syntax for index-name assignment
