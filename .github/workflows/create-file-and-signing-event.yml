@@ -67,7 +67,7 @@ jobs:
           echo "::set-output name=version::$version"
 
           for file in build/*; do
-            echo "Processing $file..."
+            echo "Processing $file... inside package $output_name"
             
             filename=$(basename "$file")
 
