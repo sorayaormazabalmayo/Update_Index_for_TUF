@@ -143,13 +143,15 @@ jobs:
         run: |
           cd tuf-repo
           echo "Checking for changes..."
+          git status
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes detected, committing index.json..."
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add updates-not-released-index/index.json
+            git add updates-not-released-index/*  # Add all index files
             git commit -m "Update index.json with new versions"
             git push https://x-access-token:${{ secrets.TUF_REPO_PAT }}@github.com/sorayaormazabalmayo/TUF_Repository_YubiKey_Vault.git main
           else
             echo "No changes to commit."
           fi
+
