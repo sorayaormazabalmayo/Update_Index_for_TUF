@@ -93,35 +93,42 @@ jobs:
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
-        
           for file in ../../build/*; do
+            # Correct the syntax for index-name assignment
+            index_name="${file}-index.json"
 
-            index-name ==$"$file"-index.json
-
-            cd tuf-repo/updates-not-released-index/$file
+            # Change to the appropriate directory
+            cd "tuf-repo/updates-not-released-index" || exit
             echo "Checking for existing index.json..."
-            if [ -f $index-name]; then
-              echo "$index-name exists, loading it."
+
+            # Check if the file exists
+            if [ -f "$index_name" ]; then
+              echo "$index_name exists, loading it."
             else
-              echo "$index-name does not exist, creating a new one."
-              echo '{}' > $index-name
+              echo "$index_name does not exist, creating a new one."
+              echo '{}' > "$index_name"
             fi
+
             echo "Processing $file..."
+            # Collect file details
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
             filename=$(basename "$file")
-            
-            version=${{steps.pushing-GAR.outputs.version}}
-            
+
+            # Access the version output from the previous step
+            version="${{ steps.pushing-GAR.outputs.version }}"
+
             echo "File: $filename, Length: $length, SHA256: $sha256, Version: $version"
-            
+
+            # Update the JSON index file
             jq --arg file "$filename" \
               --arg length "$length" \
               --arg sha256 "$sha256" \
               --arg version "$version" \
-              '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' $index-name > tmp.json && mv tmp.json $index-name
-            echo "Updated $index-name"
-            cat $index-name
+              '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' "$index_name" > tmp.json && mv tmp.json "$index_name"
+
+            echo "Updated $index_name"
+            cat "$index_name"
           done
 
           

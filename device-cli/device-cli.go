@@ -3,5 +3,5 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Printf("Device-cli version 4")
+	fmt.Printf("Device-cli version 5")
 }
