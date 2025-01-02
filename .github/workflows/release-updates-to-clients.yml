@@ -24,7 +24,7 @@ jobs:
       # Step 2: List all the -index.json files 
       - name: List the index.json files
         run: |
-          echo: "Listing the files in the TUF Repository"
+          echo "Listing the files in the TUF Repository"
           # Step 2: List all the -index.json files 
           find tuf-repo -type f -name '*-index.json'
 
