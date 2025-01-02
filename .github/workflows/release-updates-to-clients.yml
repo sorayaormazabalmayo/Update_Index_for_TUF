@@ -52,7 +52,7 @@ jobs:
       - name: Move Each Index File to Each Corresponding Delegation
         run: |
           cd tuf-repo
-          for file in $(find . -type f -name '*-index.json'); do
+          for file in $(find updates-not-released-index -type f -name '*-index.json'); do
             # Extract the file name (without the path)
             filename=$(basename "$file")
             echo "File name: $filename"
@@ -66,7 +66,7 @@ jobs:
             mkdir -p "targets/$name"
             
             # Move the file to the new directory
-            mv "updates-not-released-index/$filename" "targets/$name"
+            mv "$file" "targets/$name"
 
             echo "Moved $filename to targets/$name folder."
           done
