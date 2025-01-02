@@ -27,20 +27,20 @@ jobs:
           go-version: '1.21'
 
       # Step 3: List all Go files in the directory
-      - name: List All Go Files in the directory
+      - name: List All Go Files
         run: |
           echo "Listing all Go files in the directory:"
-          find -name "*.go"
+          find . -type f -name "*.go"
 
-      # Step 4: Build all Go files
+        # Step 4: Build all Go files
       - name: Build All Go Files
         run: |
+          echo "Building all Go files in the directory..."
           mkdir -p build
-          echo "Building all Go files in the directory"
-          find -name "*.go" | while read file; do
+          find . -type f -name "*.go" | while read -r file; do
             echo "Building $file..."
-            output_name=$(basename $file .go)
-            go build -o build/$output_name $file
+            output_name=$(basename "$file" .go)
+            go build -o "build/$output_name" "$file"
           done
 
       # Step 5: Show Build Results
@@ -76,7 +76,7 @@ jobs:
               --repository=nebula-storage \
               --location=europe-southwest1 \
               --project=polished-medium-445107-i9 \
-              --package=nebula-package \
+              --package=$output_name \
               --version="$version" \
               --source="$file"
           done
