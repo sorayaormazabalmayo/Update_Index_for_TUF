@@ -3,7 +3,7 @@ name: 'Create file and signing event'
 on:
   push:
     paths: 
-      - '*.go'  # Trigger when Go files in the source-code directory change.
+      - '**/*.go'  # Trigger when Go files in the source-code directory change.
 
 jobs:
   build-and-upload:
