@@ -93,6 +93,10 @@ jobs:
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
+
+          echo "Build outputs:"
+          ls -lh build/
+          
           for file in build/*; do
 
             filename=$(basename "$file")
