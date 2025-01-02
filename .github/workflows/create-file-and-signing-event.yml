@@ -93,22 +93,19 @@ jobs:
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
-
           echo "Build outputs:"
           ls -lh build/
-          
+
           for file in build/*; do
-
+            # Extract the filename
             filename=$(basename "$file")
-            echo "The filename could be $file"
-            # Correct the syntax for index-name assignment
-            index_name="${filename}-index.json"
+            echo "The filename is: $file"
 
-            # Change to the appropriate directory
-            cd "tuf-repo/updates-not-released-index" || exit
+            # Correct the index.json file path
+            index_name="tuf-repo/updates-not-released-index/${filename}-index.json"
+            echo "Index file: $index_name"
+
             echo "Checking for existing index.json..."
-
-            # Check if the file exists
             if [ -f "$index_name" ]; then
               echo "$index_name exists, loading it."
             else
