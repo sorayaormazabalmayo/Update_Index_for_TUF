@@ -93,16 +93,19 @@ jobs:
       # Step 9: Generate or Update index.json
       - name: Update index.json with new versions
         run: |
-          cd tuf-repo/updates-not-released-index
-          echo "Checking for existing index.json..."
-          if [ -f index.json ]; then
-            echo "index.json exists, loading it."
-          else
-            echo "index.json does not exist, creating a new one."
-            echo '{}' > index.json
-          fi
-
+        
           for file in ../../build/*; do
+
+            index-name ==$"$file"-index.json
+
+            cd tuf-repo/updates-not-released-index/$file
+            echo "Checking for existing index.json..."
+            if [ -f $index-name]; then
+              echo "$index-name exists, loading it."
+            else
+              echo "$index-name does not exist, creating a new one."
+              echo '{}' > $index-name
+            fi
             echo "Processing $file..."
             length=$(stat -c%s "$file")
             sha256=$(sha256sum "$file" | awk '{print $1}')
@@ -116,11 +119,12 @@ jobs:
               --arg length "$length" \
               --arg sha256 "$sha256" \
               --arg version "$version" \
-              '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' index.json > tmp.json && mv tmp.json index.json
+              '.[$file] = {length: ($length | tonumber), hashes: {sha256: $sha256}, version: $version}' index.json > tmp.json && mv tmp.json $index-name
+            echo "Updated $index-name"
+            cat $index-name
           done
 
-          echo "Updated index.json:"
-          cat index.json
+          
 
       # Step 10: Commit and Push index.json to the Target Repository
       - name: Commit and Push index.json
